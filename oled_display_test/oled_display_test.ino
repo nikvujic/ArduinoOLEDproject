@@ -2,16 +2,26 @@
 
 Adafruit_SSD1306 display(4);
 
+int buttonUpPin = 8;
+int buttonLeftPin = 9;
+int buttonRightPin = 10;
+int buttonDownPin = 11;
+
 int locX = 20;
 int locY = 15;
 
-boolean directionRight = true;
+boolean directionRight = false;
 boolean directionUp = false;
 boolean directionLeft = false;
-boolean directionDown = true;
+boolean directionDown = false;
 
 void setup() {
   Serial.begin(9600);
+
+  pinMode(buttonUpPin, INPUT_PULLUP);
+  pinMode(buttonLeftPin, INPUT_PULLUP);
+  pinMode(buttonRightPin, INPUT_PULLUP);
+  pinMode(buttonDownPin, INPUT_PULLUP);
   
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.clearDisplay();
@@ -44,45 +54,76 @@ void drawCharacter() {
 }
 
 void moveCharacter() {
-  if (directionRight == true) {
+  if (directionRight == true  && !testCollisionRight()) {
     locX += 3;
   }
 
-  if (directionUp == true) {
+  if (directionUp == true  && !testCollisionUp()) {
     locY -= 1;
   }
 
-  if (directionLeft == true) {
+  if (directionLeft == true  && !testCollisionLeft()) {
     locX -= 3;
   }
 
-  if (directionDown == true) {
+  if (directionDown == true  && !testCollisionDown()) {
     locY += 1;
   }
 }
 
-void testColision() {
+boolean testCollisionLeft() {
   if (locX <= 3) {
-    directionLeft = false;
+    return true;
+  }
+  return false;
+}
+
+boolean testCollisionUp() {
+  if (locY <= 1) {
+    return true;
+  }
+  return false;
+}
+
+boolean testCollisionRight() {
+  if (locX >= display.width() - 7) {
+    return true;
+  }
+  return false;
+}
+
+boolean testCollisionDown() {
+   if (locY >= display.height() - 3) {
+    return true;
+  }
+  return false;
+}
+
+void resetMovement() {
+  directionRight = false;
+  directionUp = false;
+  directionLeft = false;
+  directionDown = false;
+}
+
+void readMovement() {
+  if (!digitalRead(buttonUpPin)) {
+    directionUp = true;
+  }
+
+  if (!digitalRead(buttonLeftPin)) {
+    directionLeft = true;
+    Serial.println("READ LEFT");
+  }
+
+  if (!digitalRead(buttonRightPin)) {
     directionRight = true;
   }
 
-  if (locX >= display.width() - 7) {
-    directionLeft = true;
-    directionRight = false;
-  }
-
-  if (locY <= 1) {
-    directionUp = false;
+  if (!digitalRead(buttonDownPin)) {
     directionDown = true;
   }
-
-  if (locY >= display.height() - 3) {
-    directionUp = true;
-    directionDown = false;
-  }
 }
-
 
 void loop() {
   display.clearDisplay();
@@ -90,14 +131,13 @@ void loop() {
 
   drawBox();
 
-  drawCharacter();
-
-  testColision();
+  readMovement();
 
   moveCharacter();
 
+  drawCharacter();
 
-  delay(100);
+  resetMovement();
   
   display.display();
 }
